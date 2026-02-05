@@ -18,9 +18,14 @@ Aplicativo para análise e interpretação de contratos usando Inteligência Art
 - Chaves sensíveis via variáveis de ambiente (.env)
 - Arquivos confidenciais não são versionados
 
+- 📬 Contato
+
+📧 Email: sousaalisson915@gmail.com
+
 ## ⚠️ Direitos Autorais
 © 2026 Alisson Ramos. Todos os direitos reservados.
 
 Este código **não pode** ser copiado, redistribuído, vendido ou utilizado comercialmente sem autorização expressa do autor.
 
 Projeto disponibilizado apenas para fins de demonstração e portfólio.
+
