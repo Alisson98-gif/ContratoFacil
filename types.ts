@@ -22,12 +22,3 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
 }
-
-export interface HistoryItem {
-  id: string;
-  timestamp: number;
-  tipo_de_contrato: string;
-  contractText: string;
-  analysis: ContractAnalysis;
-  messages: ChatMessage[];
-}

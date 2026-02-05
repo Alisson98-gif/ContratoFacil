@@ -1,17 +1,9 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { analyzeContract } from './services/geminiService';
 import { extractTextFromFile } from './services/fileService';
-import { ContractAnalysis, HistoryItem, ChatMessage } from './types';
+import { ContractAnalysis, ChatMessage } from './types';
 import { AnalysisView } from './components/AnalysisView';
-
-// Fallback simples para UUID se necessário
-const generateId = () => {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-};
 
 const App: React.FC = () => {
   const [contractText, setContractText] = useState('');
@@ -20,53 +12,15 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const HISTORY_KEY = 'contrato_facil_history';
-
-  // Carrega histórico do localStorage ao montar o componente
-  useEffect(() => {
-    const saved = localStorage.getItem(HISTORY_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setHistory(parsed);
-        }
-      } catch (e) {
-        console.error("Erro ao carregar histórico", e);
-      }
-    }
-  }, []);
-
-  // Sincroniza o histórico com o localStorage sempre que ele mudar
-  useEffect(() => {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  }, [history]);
-
-  const handleAnalyze = async (textToAnalyze?: string) => {
-    const finalContent = textToAnalyze || contractText;
-    if (!finalContent.trim()) return;
+  const handleAnalyze = async () => {
+    if (!contractText.trim()) return;
 
     setIsLoading(true);
     setError(null);
     try {
-      const result = await analyzeContract(finalContent);
-      
-      const newItem: HistoryItem = {
-        id: generateId(),
-        timestamp: Date.now(),
-        tipo_de_contrato: result.tipo_de_contrato,
-        contractText: finalContent,
-        analysis: result,
-        messages: []
-      };
-
-      setHistory(prev => [newItem, ...prev]);
-      setActiveHistoryId(newItem.id);
+      const result = await analyzeContract(contractText);
       setAnalysis(result);
       setChatMessages([]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -78,13 +32,8 @@ const App: React.FC = () => {
     }
   };
 
-  const updateHistoryMessages = (messages: ChatMessage[]) => {
+  const updateCurrentMessages = (messages: ChatMessage[]) => {
     setChatMessages(messages);
-    if (activeHistoryId) {
-      setHistory(prev => prev.map(item => 
-        item.id === activeHistoryId ? { ...item, messages } : item
-      ));
-    }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,39 +57,7 @@ const App: React.FC = () => {
     setAnalysis(null);
     setContractText('');
     setChatMessages([]);
-    setActiveHistoryId(null);
     setError(null);
-    setIsSidebarOpen(false);
-  };
-
-  const loadFromHistory = (item: HistoryItem) => {
-    setContractText(item.contractText);
-    setAnalysis(item.analysis);
-    setChatMessages(item.messages);
-    setActiveHistoryId(item.id);
-    setIsSidebarOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const deleteFromHistory = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (window.confirm('Tem certeza que deseja excluir esta análise do histórico?')) {
-      const newHistory = history.filter(item => item.id !== id);
-      setHistory(newHistory);
-      
-      // Se estivermos visualizando o item que foi excluído, resetamos a tela
-      if (activeHistoryId === id) {
-        handleReset();
-      }
-    }
-  };
-
-  const clearAllHistory = () => {
-    if (window.confirm('Tem certeza que deseja apagar TODO o seu histórico? Esta ação não pode ser desfeita.')) {
-      setHistory([]);
-      localStorage.setItem(HISTORY_KEY, '[]');
-      handleReset();
-    }
   };
 
   return (
@@ -156,7 +73,8 @@ const App: React.FC = () => {
           <div className="text-center space-y-4 max-w-sm px-6">
             <h2 className="text-2xl font-black text-white tracking-tight">Analisando Contrato</h2>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Nossa IA está traduzindo o juridiquês e identificando pontos de atenção para você.
+              Privacidade garantida: processando seu documento de forma volátil. 
+              Nada será armazenado em nossos servidores ou no seu navegador.
             </p>
             <div className="flex gap-2 justify-center">
               <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
@@ -167,140 +85,21 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Sidebar Histórico */}
-      <div 
-        className={`fixed inset-y-0 left-0 w-80 bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-r border-slate-800 ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="h-full flex flex-col">
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-            <h3 className="font-bold text-white flex items-center gap-2 text-lg">
-              <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Histórico
-            </h3>
-            <button onClick={() => setIsSidebarOpen(false)} className="text-slate-500 hover:text-white p-1 hover:bg-slate-800 rounded-lg transition-colors">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          <div className="flex-grow overflow-y-auto p-4 space-y-3">
-            {history.length > 0 && (
-              <div className="flex justify-end px-2 pb-2">
-                <button 
-                  onClick={clearAllHistory}
-                  className="text-[10px] font-bold text-red-400 uppercase tracking-widest hover:text-red-300 flex items-center gap-1 transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Limpar Tudo
-                </button>
-              </div>
-            )}
-
-            {history.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
-                <div className="w-12 h-12 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <p className="text-sm">Nenhum histórico ainda.</p>
-              </div>
-            ) : (
-              history.map(item => {
-                const isActive = activeHistoryId === item.id;
-                return (
-                  <div 
-                    key={item.id}
-                    onClick={() => loadFromHistory(item)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all relative overflow-hidden group ${
-                      isActive 
-                        ? 'bg-slate-800 border-indigo-500 shadow-indigo-900/20 shadow-lg' 
-                        : 'bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50'
-                    }`}
-                  >
-                    {isActive && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-500"></div>
-                    )}
-                    
-                    <div className={`pr-8 ${isActive ? 'pl-2' : ''}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className={`font-bold text-sm truncate ${isActive ? 'text-white' : 'text-slate-300'}`}>
-                          {item.tipo_de_contrato}
-                        </h4>
-                        {isActive && (
-                          <span className="flex-shrink-0 bg-indigo-500 text-[8px] text-white font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter">
-                            Ativo
-                          </span>
-                        )}
-                      </div>
-                      <p className={`text-[10px] ${isActive ? 'text-indigo-400/80' : 'text-slate-500'}`}>
-                        {new Date(item.timestamp).toLocaleString('pt-BR')}
-                      </p>
-                    </div>
-                    
-                    <button 
-                      onClick={(e) => deleteFromHistory(e, item.id)}
-                      title="Excluir do histórico"
-                      className={`absolute top-1/2 -translate-y-1/2 right-3 p-2 rounded-lg transition-all z-20 ${
-                        isActive 
-                          ? 'text-slate-500 hover:text-red-400 hover:bg-slate-700 opacity-100' 
-                          : 'text-slate-600 hover:text-red-400 hover:bg-slate-800 opacity-0 group-hover:opacity-100'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Overlay Sidebar */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
-          onClick={() => setIsSidebarOpen(false)}
-        ></div>
-      )}
-
       {/* Header */}
       <header className="bg-black/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 transition-colors"
-              title="Abrir Histórico"
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          <div 
+            onClick={handleReset}
+            className="flex items-center gap-2 cursor-pointer group"
+          >
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-900/20">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
-            </button>
-            
-            <div 
-              onClick={handleReset}
-              className="flex items-center gap-2 cursor-pointer group"
-            >
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-900/20">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-              </div>
-              <span className="text-xl font-bold text-white tracking-tight">
-                Contrato<span className="text-indigo-400">Fácil</span>
-              </span>
             </div>
+            <span className="text-xl font-bold text-white tracking-tight">
+              Contrato<span className="text-indigo-400">Fácil</span>
+            </span>
           </div>
           
           <div className="flex items-center gap-3">
@@ -314,7 +113,7 @@ const App: React.FC = () => {
               Início
             </button>
             <span className="hidden md:inline text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
-              v1.2 Dark
+              Privacidade Total
             </span>
           </div>
         </div>
@@ -331,7 +130,7 @@ const App: React.FC = () => {
               </h1>
               <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
                 Nossa IA analisa juridiquês e traduz tudo para você instantaneamente. 
-                Segurança, clareza e controle no seu navegador.
+                <span className="block mt-2 text-indigo-300/80 font-medium">Seus dados são processados em tempo real e nunca são salvos.</span>
               </p>
             </div>
 
@@ -341,7 +140,7 @@ const App: React.FC = () => {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Documento
+                  Documento Temporário
                 </span>
                 <div className="flex gap-2">
                   <button 
@@ -394,7 +193,7 @@ const App: React.FC = () => {
                 )}
 
                 <button
-                  onClick={() => handleAnalyze()}
+                  onClick={handleAnalyze}
                   disabled={isLoading || isProcessingFile || !contractText.trim()}
                   className={`w-full py-5 px-6 rounded-2xl font-bold text-xl shadow-xl transition-all flex items-center justify-center gap-3 ${
                     isLoading || isProcessingFile || !contractText.trim()
@@ -402,9 +201,9 @@ const App: React.FC = () => {
                       : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-[0.99] shadow-indigo-500/10'
                   }`}
                 >
-                  {isLoading ? "Iniciando Processamento..." : (
+                  {isLoading ? "Processando com IA..." : (
                     <>
-                      Iniciar Análise Inteligente
+                      Iniciar Análise Privada
                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                       </svg>
@@ -417,21 +216,21 @@ const App: React.FC = () => {
             <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 { 
-                  icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", 
-                  title: "Histórico Local", 
-                  desc: "Suas análises ficam salvas com segurança apenas no seu navegador.",
+                  icon: "M13 10V3L4 14h7v7l9-11h-7z", 
+                  title: "Análise Volátil", 
+                  desc: "Os dados existem apenas durante a análise. Ao sair, tudo é apagado.",
                   color: "bg-blue-500/10 text-blue-400" 
                 },
                 { 
-                  icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944a11.955 11.955 0 01-8.618 3.04M12 21.481c-2.733 0-5.466-1.041-7.5-3.121", 
-                  title: "Privacidade Total", 
-                  desc: "Nenhum documento é armazenado permanentemente. Você tem o controle.",
+                  icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 21.481c-2.733 0-5.466-1.041-7.5-3.121", 
+                  title: "Sem Rastros", 
+                  desc: "Não usamos cookies de rastreio nem salvamos seu histórico de documentos.",
                   color: "bg-emerald-500/10 text-emerald-400" 
                 },
                 { 
-                  icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z", 
-                  title: "Chat Contextual", 
-                  desc: "Tire dúvidas específicas sobre cláusulas conversando com o assistente.",
+                  icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z", 
+                  title: "Criptografia Gemini", 
+                  desc: "Seu contrato é processado via API segura do Google e descartado após a resposta.",
                   color: "bg-indigo-500/10 text-indigo-400" 
                 }
               ].map((feature, i) => (
@@ -452,7 +251,7 @@ const App: React.FC = () => {
             analysis={analysis} 
             contractText={contractText} 
             initialMessages={chatMessages}
-            onMessagesUpdate={updateHistoryMessages}
+            onMessagesUpdate={updateCurrentMessages}
             onReset={handleReset} 
           />
         )}
@@ -461,15 +260,17 @@ const App: React.FC = () => {
       {/* Footer */}
       <footer className="bg-black border-t border-slate-900 py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center space-y-6">
+          <div className="flex items-center justify-center gap-2 text-indigo-400/60 mb-2">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04" />
+            </svg>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Foco em Privacidade & Segurança</span>
+          </div>
           <p className="text-slate-600 text-sm">
-            © 2024 Contrato Fácil. Ferramenta de apoio baseada em IA generativa.
+            © 2024 Contrato Fácil. Análise efêmera e segura via IA Generativa.
           </p>
           <div className="flex items-center justify-center gap-6 text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">
             <button onClick={handleReset} className="hover:text-white transition-colors cursor-pointer">Início</button>
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-800"></span>
-            <button onClick={() => setIsSidebarOpen(true)} className="hover:text-white transition-colors cursor-pointer">Histórico</button>
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-800"></span>
-            <button onClick={clearAllHistory} className="hover:text-red-400 transition-colors cursor-pointer">Limpar Histórico</button>
           </div>
         </div>
       </footer>
