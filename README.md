@@ -1,20 +1,72 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+ContratoFácil
 
-# Run and deploy your AI Studio app
+Aplicativo para análise e interpretação de contratos utilizando Inteligência Artificial, focado em uso pontual, sem armazenamento de dados ou histórico.
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/drive/13oiy_dHSyqQ9AHBHa-gnZsWKv0mb3okn
+ 🚀 Funcionalidades
 
-## Run Locally
+- Upload de contratos em PDF
+- Análise automática de cláusulas contratuais
+- Identificação de riscos, obrigações e pontos de atenção
+- Extração de informações relevantes do contrato
+- Conversa com IA sobre o conteúdo do contrato
+- Uso imediato: nenhum dado é salvo após a sessão
 
-**Prerequisites:**  Node.js
+---
 
+🧠 Tecnologias
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- TypeScript
+- React
+- Vite
+- Google Gemini API
+
+---
+
+🔐 Segurança e Privacidade
+
+- Nenhuma API Key está exposta no código
+- Chaves sensíveis gerenciadas via variáveis de ambiente (.env)
+- Nenhum contrato, análise ou conversa é armazenado
+- Não há banco de dados ou persistência de informações
+- O contrato é processado apenas durante a sessão ativa
+- Ao sair do sistema, todas as informações são descartadas
+- Uso da API sujeito a limites de cota do provedor
+
+---
+
+📩 Contato
+
+Email: sousaalisson915@gmail.com
+
+---
+
+ ⚠️ Direitos Autorais
+
+© 2026 Alisson Ramos. Todos os direitos reservados.
+
+Este código-fonte não pode ser copiado, redistribuído, revendido ou utilizado comercialmente sem autorização expressa do autor.
+
+Projeto disponibilizado apenas para fins de demonstração, estudo e portfólio.
+
+---
+
+📄 Licença
+
+Este projeto utiliza **LICENÇA PROPRIETÁRIA**.
+
+O código-fonte é protegido por direitos autorais e **não pode ser**:
+
+- Copiado  
+- Redistribuído  
+- Revendido  
+- Utilizado comercialmente  
+- Oferecido como SaaS, PaaS ou serviço similar  
+- Publicado publicamente (GitHub, fóruns, marketplaces)
+
+sem autorização expressa do autor.
+
+O software é fornecido **NO ESTADO EM QUE SE ENCONTRA (AS IS)**, sem qualquer garantia e sem obrigação de suporte ou manutenção.
+
+Consulte o arquivo `LICENSE` para os termos completos.
