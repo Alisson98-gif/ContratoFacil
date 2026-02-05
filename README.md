@@ -1,20 +1,26 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# ContratoFácil
 
-# Run and deploy your AI Studio app
+Aplicativo para análise e interpretação de contratos usando Inteligência Artificial.
 
-This contains everything you need to run your app locally.
+## 🚀 Funcionalidades
+- Upload de contratos em PDF
+- Análise automática de cláusulas
+- Conversa com IA sobre o contrato
+- Histórico de documentos e chats
 
-View your app in AI Studio: https://ai.studio/apps/drive/13oiy_dHSyqQ9AHBHa-gnZsWKv0mb3okn
+## 🧠 Tecnologias
+- TypeScript
+- Node.js
+- Google Gemini API
 
-## Run Locally
+## 🔐 Segurança
+- Nenhuma API Key está exposta no código
+- Chaves sensíveis via variáveis de ambiente (.env)
+- Arquivos confidenciais não são versionados
 
-**Prerequisites:**  Node.js
+## ⚠️ Direitos Autorais
+© 2026 Alisson Ramos. Todos os direitos reservados.
 
+Este código **não pode** ser copiado, redistribuído, vendido ou utilizado comercialmente sem autorização expressa do autor.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Projeto disponibilizado apenas para fins de demonstração e portfólio.
